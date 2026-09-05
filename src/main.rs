@@ -1,11 +1,13 @@
+use crate::case::check_case;
+use colored::Colorize;
 use std::{
     env::args,
     fs::{self, DirEntry},
     path::Path,
 };
+mod case;
 
 fn main() {
-    println!("Hello");
     let arguments: Vec<_> = args().collect();
 
     let mut target_dir = Path::new(".");
@@ -16,19 +18,24 @@ fn main() {
     println!("Working on the following dir: {:?}", &target_dir);
 
     let reads = read_directory(target_dir);
-    let mut items_in_dir: Vec<CustomDirEntry> =
+    let items_in_dir: Vec<CustomDirEntry> =
         reads.iter().map(|f| CustomDirEntry::new(f, None)).collect();
 
-    let mut iter = 0;
-    for i in &mut items_in_dir {
-        let name = format!("new name {:?}", iter);
-        i.assign_name(name);
-        iter = iter + 1;
+    for item in &items_in_dir {
+        item.pretty_print();
     }
 
-    for i in &items_in_dir {
-        i.rename();
-    }
+    // Actual renaming
+    // for i in &items_in_dir {
+    //     i.rename();
+    // }
+
+    // let mut iter = 0;
+    // for i in &mut items_in_dir {
+    //     let name = format!("new name {:?}", iter);
+    //     i.assign_name(name);
+    //     iter = iter + 1;
+    // }
 }
 
 fn read_directory(path: &Path) -> Vec<DirEntry> {
@@ -42,6 +49,7 @@ struct CustomDirEntry<'a> {
     item: &'a DirEntry,
     name: String,
     new_name: Option<String>,
+    case: Case,
 }
 
 impl<'a> CustomDirEntry<'a> {
@@ -49,10 +57,12 @@ impl<'a> CustomDirEntry<'a> {
         let name = entry.file_name().into_string().unwrap();
         CustomDirEntry {
             item: entry,
-            name: name,
+            name: name.clone(),
+            case: check_case(name.as_str()),
             new_name: new_name,
         }
     }
+
     fn rename(&self) {
         match self.new_name {
             None => {
@@ -71,7 +81,24 @@ impl<'a> CustomDirEntry<'a> {
             }
         }
     }
-    fn assign_name(&mut self, another_name: String) {
-        self.new_name = Some(another_name);
+
+    fn pretty_print(&self) {
+        let print = format!("{:?}", self.item.file_name());
+        match self.case {
+            Case::Kebab => println!("{}", print.green()),
+            Case::Snake => println!("{}", print.yellow()),
+            Case::Camel => println!("{}", print.cyan()),
+            Case::Pascal => println!("{}", print.blue()),
+            Case::None => println!("{}", print.red()),
+        };
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Case {
+    Kebab,
+    Snake,
+    Camel,
+    Pascal,
+    None,
 }
