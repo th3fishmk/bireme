@@ -16,11 +16,11 @@ pub fn check_case(target: &str) -> Case {
 }
 
 fn check_for_kebab_case(target: &str) -> bool {
-    let kebab_regex = Regex::new(r"^[_.]?([a-z0-9]+-)*[a-z0-9]+(\.[a-z0-9]+)*$").unwrap();
+    let kebab_regex = Regex::new(r"^[_.]?([a-z0-9]+-)*[a-z0-9]+(\.[a-z0-9\-]+)*$").unwrap();
     kebab_regex.is_match(target)
 }
 fn check_for_snake_case(target: &str) -> bool {
-    let kebab_regex = Regex::new(r"^[_.]?([a-z0-9]+_)*[a-z0-9]+(\.[a-z0-9]+)*$").unwrap();
+    let kebab_regex = Regex::new(r"^[_.]?([a-z0-9]+_)*[a-z0-9]+(\.[a-z0-9\_]+)*$").unwrap();
     kebab_regex.is_match(target)
 }
 fn check_for_camel_case(target: &str) -> bool {
@@ -32,44 +32,42 @@ fn check_for_pascal_case(target: &str) -> bool {
     kebab_regex.is_match(target)
 }
 
-pub fn to_kebab(target: &String, case: &Case) -> Option<String> {
-    match case {
-        Case::None => {
-            let kebab_name = none_to_kebab(target);
-            kebab_name
-        }
-        _ => None,
-    }
+pub fn to_kebab(target: &str) -> Option<String> {
+    none_to_kebab(target)
 }
 
-fn none_to_kebab(target: &String) -> Option<String> {
+fn none_to_kebab(target: &str) -> Option<String> {
     let double_dots = Regex::new(r"\.{2,}").unwrap();
-    let non_alpha_or_dash = Regex::new(r"[^a-z0-9\-]").unwrap();
+    let all_invalids = Regex::new(r"[^a-z0-9\-\_]").unwrap();
     let double_dash = Regex::new(r"\-{2,}").unwrap();
 
-    let target = double_dots.replace_all(&target, ".").to_string();
+    let target = double_dots.replace_all(target, ".").to_string();
 
     let parts: Vec<_> = target.split(".").collect();
     let mut processed = vec![];
 
     for part in parts {
         let mut pice = part.to_lowercase();
-        pice = pice.replace("_", " ");
+        pice = pice.replace("_", "-");
         pice = pice.trim().to_string();
         pice = pice.replace(" ", "-");
         // pice = pice.trim().to_string();
 
-        pice = non_alpha_or_dash.replace_all(&pice, "").to_string();
+        pice = all_invalids.replace_all(&pice, "").to_string();
         pice = double_dash.replace_all(&pice, "-").to_string();
+        pice = pice.trim_start_matches("-").to_string();
         pice = pice.trim_end_matches("-").to_string();
 
         processed.push(pice);
     }
 
-    let result = processed.join(".");
+    let mut result = processed.join(".");
+    result = result.trim_end_matches(".").to_string();
     if check_for_kebab_case(&result) {
+        // println!("kebab || {}", result);
         Some(result)
     } else {
+        // println!("!kebab || {}", result);
         None
     }
 }
@@ -240,6 +238,8 @@ mod tests {
             "Untitled document (2).docx",
             "Zoom Meeting Recording - July 4th.mp4",
             "zoom recordings - biology",
+            "zoom recordings - biology.",
+            "software ver-1.40.0-1.x86_64.rpm",
         ];
         names
     }
@@ -281,6 +281,8 @@ mod tests {
             "untitled-document-2.docx",
             "zoom-meeting-recording-july-4th.mp4",
             "zoom-recordings-biology",
+            "zoom-recordings-biology",
+            "software-ver-1.40.0-1.x86-64.rpm",
         ];
         names
     }
@@ -300,7 +302,8 @@ mod tests {
             let item_name = item.clone().unwrap();
             let item_name = item_name.as_str();
             let is_kebab = check_for_kebab_case(item_name);
-            println!("{item_name}");
+            // println!("{:?}", &item);
+            // println!("{item_name}");
             assert_eq!(is_kebab, true);
         }
 

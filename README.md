@@ -2,6 +2,8 @@
 
 This tool enforces a naming convention on a given directory
 
+> **Warning** The current state of this program allow for data loss! DO NOT RUN THIS PROGRAM IF YOU HAVE IMPORTANT INFORMATION IN THE TARGET DIRECTORY
+
 ```bash
 bireme <target_dir>
 
@@ -49,5 +51,3 @@ documents/
 ## Configuration
 
 This tool is customizable, check the [configuration file](./bireme.toml) to see all the configurations avaible, their defaults, and their options. To change these settings, you must create a copy of this file by running `bireme init` (or manually create a file named `bireme.toml`) and do your customizations.
-
-##
