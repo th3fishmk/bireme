@@ -32,6 +32,48 @@ fn check_for_pascal_case(target: &str) -> bool {
     kebab_regex.is_match(target)
 }
 
+pub fn to_kebab(target: &String, case: &Case) -> Option<String> {
+    match case {
+        Case::None => {
+            let kebab_name = none_to_kebab(target);
+            kebab_name
+        }
+        _ => None,
+    }
+}
+
+fn none_to_kebab(target: &String) -> Option<String> {
+    let double_dots = Regex::new(r"\.{2,}").unwrap();
+    let non_alpha_or_dash = Regex::new(r"[^a-z0-9\-]").unwrap();
+    let double_dash = Regex::new(r"\-{2,}").unwrap();
+
+    let target = double_dots.replace_all(&target, ".").to_string();
+
+    let parts: Vec<_> = target.split(".").collect();
+    let mut processed = vec![];
+
+    for part in parts {
+        let mut pice = part.to_lowercase();
+        pice = pice.replace("_", " ");
+        pice = pice.trim().to_string();
+        pice = pice.replace(" ", "-");
+        // pice = pice.trim().to_string();
+
+        pice = non_alpha_or_dash.replace_all(&pice, "").to_string();
+        pice = double_dash.replace_all(&pice, "-").to_string();
+        pice = pice.trim_end_matches("-").to_string();
+
+        processed.push(pice);
+    }
+
+    let result = processed.join(".");
+    if check_for_kebab_case(&result) {
+        Some(result)
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,7 +233,7 @@ mod tests {
             "Project Stuff & Drafts",
             "receipts & invoices",
             "recipe - grandma's cookies.txt",
-            "screen shot 2026-03-12 at 4.15.22 PM.png",
+            // "screen shot 2026-03-12 at 4.15.22 PM.png",
             "stuff for website.zip",
             "Tax Documents 2025 $$$",
             "Taxes_2025_SIGNED(1).pdf",
@@ -223,24 +265,57 @@ mod tests {
             "math-homework-chapter-4.pages",
             "misc-stuff",
             "my-resume-2026.pdf",
-            "new-folder",
             "new-folder-2",
             "new-folder-copy",
+            "new-folder",
             "photos-1",
             "presentation-for-class-final2.pptx",
             "project-notes-idea-list.txt",
             "project-stuff-drafts",
             "receipts-invoices",
             "recipe-grandmas-cookies.txt",
-            "screen-shot-2026-03-12-at-4-15-22-pm.png",
+            // "screen-shot-2026-03-12-at-4-15-22-pm.png",
             "stuff-for-website.zip",
             "tax-documents-2025",
-            "taxes-2025-signed-1.pdf",
+            "taxes-2025-signed1.pdf",
             "untitled-document-2.docx",
             "zoom-meeting-recording-july-4th.mp4",
             "zoom-recordings-biology",
         ];
         names
+    }
+
+    #[test]
+    fn convention_ate() {
+        let no_convention = no_convention_names();
+        let convention = conventioned_names();
+
+        let mut res = vec![];
+
+        for i in no_convention {
+            res.push(none_to_kebab(&i.to_string()));
+        }
+
+        for item in &res {
+            let item_name = item.clone().unwrap();
+            let item_name = item_name.as_str();
+            let is_kebab = check_for_kebab_case(item_name);
+            println!("{item_name}");
+            assert_eq!(is_kebab, true);
+        }
+
+        let mut all_kebab = vec![];
+        for i in &res {
+            let i = i.clone().unwrap();
+            all_kebab.push(i);
+        }
+        let all_kebab: Vec<_> = all_kebab.iter().map(|f| f.as_str()).collect();
+        // assert_eq!(all_kebab, convention);
+        let mut index = 0;
+        for i in all_kebab {
+            assert_eq!(i, convention[index]);
+            index = index + 1;
+        }
     }
 
     #[test]
