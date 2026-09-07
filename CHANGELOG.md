@@ -19,3 +19,4 @@ All notable changes in this projects will be listed in this document
 - Handled files with the same name as directories
 
 - Enabled recursive mode!
+- Disabled working on the root directory

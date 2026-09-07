@@ -71,7 +71,11 @@ fn parse_dir(target_dir: &Path) {
 }
 
 fn read_directory(path: &Path) -> Vec<DirEntry> {
-    let read = fs::read_dir(path).unwrap();
+    if path.parent().is_none() {
+        panic!("Working on the root dir is not allowed!");
+    }
+    let message = format!("Failed to read the directory: {:?}", path);
+    let read = fs::read_dir(path).expect(&message);
     read.into_iter().map(|f| f.unwrap()).collect()
 }
 
