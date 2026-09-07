@@ -17,3 +17,5 @@ All notable changes in this projects will be listed in this document
 - Added safeguard to prevent over-writing files/directories (data loss)
 - Skipping files/directories that need no renaming
 - Handled files with the same name as directories
+
+- Enabled recursive mode!

@@ -16,46 +16,56 @@ fn main() {
     if arguments.len() > 1 {
         target_dir = Path::new(&arguments[1]);
     }
-    println!("\nWorking on the following dir: {:?}\n", target_dir);
 
+    parse_dir(target_dir);
+}
+
+fn parse_dir(target_dir: &Path) {
     let reads = read_directory(target_dir);
     let items_in_dir: Vec<CustomDirEntry> = reads.iter().map(CustomDirEntry::new).collect();
+    let directories: Vec<_> = items_in_dir.iter().filter(|f| f.is_dir).collect();
+    let files: Vec<_> = items_in_dir.iter().filter(|f| !f.is_dir).collect();
 
-    for item in &items_in_dir {
-        item.pretty_print();
+    if !directories.is_empty() {
+        for item in &directories {
+            parse_dir(&item.item.path());
+        }
     }
 
-    println!(
-        "\nFound a total of: {} files/directories",
-        items_in_dir.len()
-    );
+    println!("\nWorking on the following dir: {:?}", target_dir);
 
-    let count: usize = items_in_dir
+    if !reads.is_empty() {
+        for dir in &directories {
+            dir.pretty_print();
+        }
+        for file in &files {
+            file.pretty_print();
+        }
+    }
+
+    let count_to_rename: usize = items_in_dir
         .iter()
         .filter(|f| f.case != Case::Kebab)
         .collect::<Vec<_>>()
         .len();
 
-    if count > 0 {
-        print!(
-            "Automatic rename is possible for {count} files/directories.\nDo you want to continue: y/[n]: "
-        );
-        let _ = io::stdout().flush();
-        let mut user_confirmation = String::new();
-        io::stdin()
-            .read_line(&mut user_confirmation)
-            .expect("Invalid response!");
-        user_confirmation = user_confirmation.to_lowercase().trim().to_string();
-        if user_confirmation == "y" || user_confirmation == "yes" {
-            println!("Renaming...");
-            for i in &items_in_dir {
-                i.rename();
+    if count_to_rename > 0 {
+        println!("\n{} items on: {:?}", &items_in_dir.len(), target_dir);
+        let confirmation = ask_confirmation(count_to_rename);
+        if confirmation {
+            // Renaming dirs
+            for dir in &directories {
+                dir.rename();
+            }
+            // Renaming files
+            for file in &files {
+                file.rename();
             }
         } else {
-            println!("See you soon! (Threat)")
+            println!("No changes where made!");
         }
     } else {
-        println!("Nothing to do!")
+        println!("Nothing to do here");
     }
 }
 
@@ -64,18 +74,35 @@ fn read_directory(path: &Path) -> Vec<DirEntry> {
     read.into_iter().map(|f| f.unwrap()).collect()
 }
 
+fn ask_confirmation(count: usize) -> bool {
+    print!("Automatic rename is possible for {count} files/directories. Rename? y/[n]: ");
+    let _ = io::stdout().flush();
+    let mut user_confirmation = String::new();
+    io::stdin()
+        .read_line(&mut user_confirmation)
+        .expect("Invalid response!");
+    user_confirmation = user_confirmation.to_lowercase().trim().to_string();
+    if user_confirmation == "y" || user_confirmation == "yes" {
+        true
+    } else {
+        false
+    }
+}
+
 #[derive(Debug)]
 struct CustomDirEntry<'a> {
     item: &'a DirEntry,
     name: String,
     kebab_name: Option<String>,
     case: Case,
+    is_dir: bool,
 }
 
 impl<'a> CustomDirEntry<'a> {
     fn new(entry: &'a DirEntry) -> CustomDirEntry<'a> {
         let name = entry.file_name().into_string().unwrap();
         let current_case = check_case(name.as_str());
+        // let is_dir = ;
         CustomDirEntry {
             item: entry,
             name: name.clone(),
@@ -85,6 +112,7 @@ impl<'a> CustomDirEntry<'a> {
             } else {
                 to_kebab(&name)
             },
+            is_dir: entry.file_type().unwrap().is_dir(),
         }
     }
 
@@ -105,7 +133,7 @@ impl<'a> CustomDirEntry<'a> {
                     match file_exist {
                         Err(x) => {
                             let message = "The following error has occur:".red();
-                            print!("{message} {x}");
+                            print!("{message} {x}\r");
                         }
                         Ok(x) => {
                             if x {
@@ -113,17 +141,20 @@ impl<'a> CustomDirEntry<'a> {
                                 let context = format!(
                                     "A file/directory with the name {new_full_name} already exist!"
                                 );
-                                print!("{message} {context}");
+                                print!("{message} {context}\r");
                             } else {
                                 let renamed = fs::rename(&old_full_name, &new_full_name);
                                 match renamed {
                                     Err(_) => {
                                         let message = "Error:".red();
-                                        print!("{message} {} x {}", old_full_name, new_full_name);
+                                        print!("{message} {} x {}\r", old_full_name, new_full_name);
                                     }
                                     Ok(_) => {
                                         let message = "Renamed:".green();
-                                        print!("{message} {} => {}", old_full_name, new_full_name);
+                                        print!(
+                                            "{message} {} => {}\r",
+                                            old_full_name, new_full_name
+                                        );
                                     }
                                 }
                             }
@@ -215,6 +246,7 @@ mod tests {
         ];
         dummy_files
     }
+    // This function is marked as a test but it's actual purpose is to create dummy files/dirs to work with
     #[test]
     fn create_temporal_files_and_dirs() {
         let path = PathBuf::from("dummy");
