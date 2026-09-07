@@ -13,3 +13,7 @@ All notable changes in this projects will be listed in this document
 - Support for linux versioning system: `"software-ver-1.40.0-1.x86-64.rpm"`
 - Removed irrelevant operations
 - improved interactivity (user)
+
+- Added safeguard to prevent over-writing files/directories (data loss)
+- Skipping files/directories that need no renaming
+- Handled files with the same name as directories

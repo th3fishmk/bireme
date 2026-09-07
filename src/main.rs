@@ -3,9 +3,8 @@ use colored::Colorize;
 use std::{
     env::args,
     fs::{self, DirEntry},
-    io,
+    io::{self, Write},
     path::Path,
-    vec,
 };
 mod case;
 
@@ -27,7 +26,7 @@ fn main() {
     }
 
     println!(
-        "\nFound a total of: {} files and directories\n",
+        "\nFound a total of: {} files/directories",
         items_in_dir.len()
     );
 
@@ -36,16 +35,17 @@ fn main() {
         .filter(|f| f.case != Case::Kebab)
         .collect::<Vec<_>>()
         .len();
+
     if count > 0 {
-        println!(
-            "\nAutomatic rename is possible for {count} files/directories\nDo you want to continue: y/n"
+        print!(
+            "Automatic rename is possible for {count} files/directories.\nDo you want to continue: y/[n]: "
         );
+        let _ = io::stdout().flush();
         let mut user_confirmation = String::new();
         io::stdin()
             .read_line(&mut user_confirmation)
             .expect("Invalid response!");
         user_confirmation = user_confirmation.to_lowercase().trim().to_string();
-
         if user_confirmation == "y" || user_confirmation == "yes" {
             println!("Renaming...");
             for i in &items_in_dir {
@@ -90,38 +90,48 @@ impl<'a> CustomDirEntry<'a> {
 
     fn rename(&self) {
         if self.case != Case::Kebab {
-            // match self.kebab_name {
-            // None =>
             match &self.kebab_name {
                 None => println!("New name could NOT be constructed automatically"),
-                Some(x) => {
-                    println!("Renaming {:?} => {:?}", self.item.path(), self.kebab_name);
-                    let full_name = self.item.path().into_string().unwrap();
+                Some(new_name) => {
+                    print!("Renaming {:?} => {:?}\r", self.item.path(), new_name);
+                    let old_full_name = self.item.path().into_string().unwrap();
+                    let old_name = &self.name;
+                    let mut new_full_name = old_full_name.trim_end_matches(old_name).to_string();
+                    new_full_name = Path::join(Path::new(&new_full_name), new_name)
+                        .into_string()
+                        .unwrap();
 
-                    // TODO: Make sure we dont rename the directory name as well, in case both the file and the dir have the same name
-                    let new_full_name = full_name.replace(&self.name, x.as_str());
-                    let renamed = fs::rename(full_name, new_full_name);
-                    match renamed {
-                        Err(x) => println!("Error renaming: {x}"),
-                        Ok(_) => println!("We did it!"),
+                    let file_exist = fs::exists(&new_full_name);
+                    match file_exist {
+                        Err(x) => {
+                            let message = "The following error has occur:".red();
+                            print!("{message} {x}");
+                        }
+                        Ok(x) => {
+                            if x {
+                                let message = "ERROR: ".red();
+                                let context = format!(
+                                    "A file/directory with the name {new_full_name} already exist!"
+                                );
+                                print!("{message} {context}");
+                            } else {
+                                let renamed = fs::rename(&old_full_name, &new_full_name);
+                                match renamed {
+                                    Err(_) => {
+                                        let message = "Error:".red();
+                                        print!("{message} {} x {}", old_full_name, new_full_name);
+                                    }
+                                    Ok(_) => {
+                                        let message = "Renamed:".green();
+                                        print!("{message} {} => {}", old_full_name, new_full_name);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-        // Some(ref x) => {
-        //     println!("Renaming {:?} => {:?}", self.item.path(), self.kebab_name);
-        //     let full_name = self.item.path().into_string().unwrap();
-
-        //     // TODO: Make sure we dont rename the directory name as well, in case both the file and the dir have the same name
-        //     let new_full_name = full_name.replace(&self.name, x);
-        //     let renamed = fs::rename(full_name, new_full_name);
-        //     match renamed {
-        //         Err(x) => println!("Error renaming: {x}"),
-        //         Ok(_) => println!("We did it!"),
-        //     }
-        // }
-        // }
-        } else {
-            // println!("Skipping, no need to rename")
+            println!();
         }
     }
 
