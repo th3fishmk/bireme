@@ -3,7 +3,7 @@
 This tool enforces a naming convention on a given directory
 
 ```bash
-$ bireme <target_dir>  #
+$ bireme <target_dir>
 # Examples:
 $ bireme # Run in the current directory
 $ bireme ~/Documents/ # Run in the Documents directory
@@ -59,8 +59,6 @@ $ tree
 
 3 directories, 12 files
 ```
-
-##
 
 <!--## Configuration
 

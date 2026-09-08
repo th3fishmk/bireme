@@ -1,12 +1,14 @@
+use crate::{config_builder::Configs, custom_dir_entry::CustomDirEntry};
+use colored::Colorize;
+use serde::Deserialize;
 use std::{
     env::args,
     fs::{self, DirEntry},
     io::{self, Write},
     path::Path,
 };
-
-use crate::custom_dir_entry::CustomDirEntry;
 mod case;
+mod config_builder;
 mod custom_dir_entry;
 
 fn main() {
@@ -17,36 +19,53 @@ fn main() {
     if arguments.len() > 1 {
         target_dir = Path::new(&arguments[1]);
     }
+    let configs = Configs::search_configs(target_dir);
 
-    parse_dir(target_dir);
+    println!("{:?}", configs);
+    println!();
+
+    parse_dir(target_dir, &configs);
 }
 
-fn parse_dir(target_dir: &Path) {
+fn parse_dir(target_dir: &Path, configs: &Configs) {
     let reads = read_directory(target_dir);
-    let items_in_dir: Vec<CustomDirEntry> = reads.iter().map(CustomDirEntry::new).collect();
+    let items_in_dir: Vec<CustomDirEntry> = reads
+        .iter()
+        .map(|f| CustomDirEntry::new(f, configs))
+        .collect();
     let directories: Vec<_> = items_in_dir.iter().filter(|f| f.is_dir).collect();
     let files: Vec<_> = items_in_dir.iter().filter(|f| !f.is_dir).collect();
 
-    if !directories.is_empty() {
+    if !directories.is_empty() && configs.recursive_mode {
         for item in &directories {
-            parse_dir(&item.item.path());
+            if !(configs.ignore_dotfiles && item.is_dotfile) {
+                parse_dir(&item.item_data.path(), configs);
+            } else {
+                let message = format!("Skipping {} (dotfile)", item.name).green();
+                println!("{message}");
+            }
         }
     }
 
-    println!("\nWorking on the following dir: {:?}", target_dir);
+    println!(
+        "\nWorking on the following dir: {}",
+        target_dir.to_str().unwrap()
+    );
 
     if !reads.is_empty() {
         for dir in &directories {
+            print!("+ ");
             dir.pretty_print();
         }
         for file in &files {
+            print!("- ");
             file.pretty_print();
         }
     }
 
     let count_to_rename: usize = items_in_dir
         .iter()
-        .filter(|f| f.case != Case::Kebab)
+        .filter(|f| f.marked_to_rename)
         .collect::<Vec<_>>()
         .len();
 
@@ -74,7 +93,7 @@ fn read_directory(path: &Path) -> Vec<DirEntry> {
     if path.parent().is_none() {
         panic!("Working on the root dir is not allowed!");
     }
-    let message = format!("Failed to read the directory: {:?}", path);
+    let message = format!("Failed to read the directory: {}", path.to_str().unwrap());
     let read = fs::read_dir(path).expect(&message);
     read.into_iter().map(|f| f.unwrap()).collect()
 }
@@ -90,7 +109,7 @@ fn ask_confirmation(count: usize) -> bool {
     user_confirmation == "y" || user_confirmation == "yes"
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum Case {
     Kebab,
     Snake,

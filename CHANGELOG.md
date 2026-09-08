@@ -20,3 +20,14 @@ All notable changes in this projects will be listed in this document
 
 - Enabled recursive mode!
 - Disabled working on the root directory
+
+Adding settings:
+
+- [ ] casing
+- [x] ignore dotfiles
+- [ ] ignore gitignore
+- [x] recursive mode
+- [ ] ignore patters
+- [ ] max length
+- [ ] min length
+- [ ] no confirm

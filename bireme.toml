@@ -7,12 +7,12 @@ case = "kebab"
 
 # Ignore files started with '.'
 # Default: true
-ignore_dotfiles = true
+ignore_dotfiles = false
 
 # Ignore gitignore file
 # Disable scanning the `.gitignore` (if any) file and applying the same rules
 # Default: false
-ignore_gitignore = false
+# ignore_gitignore = false
 
 # Traverse subdirectories recursively
 # Default: true
@@ -21,13 +21,13 @@ recursive_mode = true
 # Array of glob patters to ignore
 # Default: []
 # Example: ["docs/*", "my stuff"]
-ignore_pattern = []
+# ignore_pattern = ["target/"]
 
 # Limit files and directories name length
 # Default: min = 5, max = 40
-min_name_length = 5
-max_name_length = 40
+# min_name_length = 5
+# max_name_length = 40
 
 # Do not wait for confirmation before renaming files
 # Default: false
-no_confirm = false
+# no_confirm = false
