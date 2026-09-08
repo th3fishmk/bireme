@@ -62,12 +62,14 @@ impl Configs {
         let mut defaults = Self::get_defaults();
 
         if exist {
+            println!("Using custom configs!");
             let content = fs::read_to_string(full_path).unwrap();
             let new_configs: OptionalConfigs = toml::from_str(&content).unwrap();
 
             if let Some(x) = new_configs.case {
                 match x.as_str() {
                     "kebab" => defaults.case = Case::Kebab,
+                    // "snake" => defaults.case = Case::Snake,
                     _ => panic!("Error reading configurations: {x} is not a valid option"),
                 }
             }

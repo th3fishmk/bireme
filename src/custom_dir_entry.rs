@@ -38,6 +38,18 @@ impl<'a> CustomDirEntry<'a> {
         let all_true = check_case && check_dotfile;
 
         let _kebab_name = to_kebab(&name, &current_case);
+
+        // let cased_name = to
+
+        //     = if check_case {
+        //     let prospect = to_kebab(&name, &current_case);
+        //     match prospect {
+        //         None => None,
+        //         Some(x) => Some(x),
+        //     }
+        // } else {
+        //     Some(name.clone())
+        // };
         // let new_name = from_kebab_to_case(kebab_name, configs.case);
 
         CustomDirEntry {

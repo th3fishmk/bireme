@@ -16,6 +16,7 @@ name = "bireme"
 version = "0.1.0"
 dependencies = [
  "colored",
+ "diacritics",
  "regex",
  "serde",
  "toml",
@@ -29,6 +30,12 @@ checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
  "windows-sys",
 ]
+
+[[package]]
+name = "diacritics"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e39a82691e437d97c90836fcee7e1946378123c3fdc1bfec5ae15b769996dda6"
 
 [[package]]
 name = "equivalent"

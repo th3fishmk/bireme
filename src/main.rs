@@ -63,15 +63,24 @@ fn parse_dir(target_dir: &Path, configs: &Configs) {
         }
     }
 
-    let count_to_rename: usize = items_in_dir
+    let count_to_rename = items_in_dir
         .iter()
         .filter(|f| f.marked_to_rename)
-        .collect::<Vec<_>>()
-        .len();
+        .collect::<Vec<_>>();
+    let count = count_to_rename.len();
+    let with_name = count_to_rename
+        .iter()
+        .filter(|f| f.new_name.is_some())
+        .count();
 
-    if count_to_rename > 0 {
+    if with_name > 0 {
         println!("\n{} items on: {:?}", items_in_dir.len(), target_dir);
-        let confirmation = ask_confirmation(count_to_rename);
+        if count != with_name {
+            println!(
+                "{count} items where mark to rename, but we can only provide names for {with_name}"
+            );
+        }
+        let confirmation = ask_confirmation(with_name);
         if confirmation {
             // Renaming dirs
             for dir in &directories {
