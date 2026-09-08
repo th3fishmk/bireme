@@ -1,6 +1,6 @@
 use crate::{
     Case::{self},
-    case::{check_case, to_kebab},
+    case::{check_case, from_kebab, to_kebab},
     config_builder::Configs,
 };
 use colored::{ColoredString, Colorize};
@@ -31,27 +31,16 @@ impl<'a> CustomDirEntry<'a> {
         } else {
             true
         };
-        let check_case = current_case != configs.case;
-        // println!("Item: {name} ");
-        // println!("\tdot-check: {check_dotfile}");
-        // println!("\tcase-check: {check_case}");
-        let all_true = check_case && check_dotfile;
 
-        let _kebab_name = to_kebab(&name, &current_case);
+        let case_change_req = current_case != configs.case;
+        let all_true = case_change_req && check_dotfile;
 
-        // let cased_name = to
-
-        //     = if check_case {
-        //     let prospect = to_kebab(&name, &current_case);
-        //     match prospect {
-        //         None => None,
-        //         Some(x) => Some(x),
-        //     }
-        // } else {
-        //     Some(name.clone())
-        // };
-        // let new_name = from_kebab_to_case(kebab_name, configs.case);
-
+        let kebab_name = to_kebab(&name, &current_case);
+        let new_cased_name: Option<String>;
+        match kebab_name {
+            Some(x) => new_cased_name = from_kebab(&x, &configs.case),
+            None => new_cased_name = None,
+        };
         CustomDirEntry {
             item_data: entry,
             name: name.clone(),
@@ -60,7 +49,7 @@ impl<'a> CustomDirEntry<'a> {
             is_dir: entry.file_type().unwrap().is_dir(),
             is_dotfile: dotfile,
             marked_to_rename: all_true,
-            new_name: _kebab_name,
+            new_name: new_cased_name,
         }
     }
 

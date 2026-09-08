@@ -17,29 +17,43 @@ pub fn check_case(target: &str) -> Case {
 }
 
 fn check_for_kebab_case(target: &str) -> bool {
-    let kebab_regex = Regex::new(r"^([a-z0-9]+-)*[a-z0-9]+(\.[a-z0-9\-]+)*$").unwrap();
+    let kebab_regex = Regex::new(r"^[_.]?([a-z0-9]+-)*[a-z0-9]+(\.[a-z0-9\-]+)*$").unwrap();
     kebab_regex.is_match(target)
 }
 fn check_for_snake_case(target: &str) -> bool {
-    let kebab_regex = Regex::new(r"^([a-z0-9]+_)*[a-z0-9]+(\.[a-z0-9\_]+)*$").unwrap();
+    let kebab_regex = Regex::new(r"^[_.]?([a-z0-9]+_)*[a-z0-9]+(\.[a-z0-9\_]+)*$").unwrap();
     kebab_regex.is_match(target)
 }
 fn check_for_camel_case(target: &str) -> bool {
-    let kebab_regex = Regex::new(r"^[a-z][a-z0-9]*([A-Z][a-z0-9]*)*(\.[a-z0-9]+)*$").unwrap();
+    let kebab_regex = Regex::new(r"^[_.]?[a-z][a-z0-9]*([A-Z][a-z0-9]*)*(\.[a-z0-9]+)*$").unwrap();
     kebab_regex.is_match(target)
 }
 fn check_for_pascal_case(target: &str) -> bool {
-    let kebab_regex = Regex::new(r"^([A-Z][a-z0-9]*)+(\.[a-z0-9]+)*$").unwrap();
+    let kebab_regex = Regex::new(r"^[_.]?([A-Z][a-z0-9]*)+(\.[a-z0-9]+)*$").unwrap();
     kebab_regex.is_match(target)
 }
-pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
-    // println!();
-    // println!("Original: {}", target);
 
+pub fn from_kebab(target: &str, target_case: &Case) -> Option<String> {
+    match target_case {
+        Case::Kebab => {
+            // println!("Positive for kebab!");
+            Some(target.to_string())
+        }
+        Case::Snake => {
+            // println!("Snaking!");
+            Some("snaky_file".to_string())
+        }
+        _ => {
+            println!("Negative for _");
+            None
+        }
+    }
+}
+
+pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
     let invalid = Regex::new(r"[^a-zA-Z0-9\.]").unwrap();
     let double_allowed = Regex::new(r"\-{2,}|\_{2,}|\.{2,}").unwrap();
     let spaces = Regex::new(r"\s").unwrap();
-
     let mut target = diacritics::remove_diacritics(target);
     let leading_period = target.starts_with(".");
     if leading_period {
@@ -49,52 +63,59 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
     if leading_underscore {
         target = target.trim_start_matches("-").to_string();
     }
-
     target = invalid.replace_all(&target, " ").to_string();
     target = double_allowed.replace_all(&target, " ").to_string();
     target = target.trim().to_string();
     target = spaces.replace_all(&target, "-").to_string();
-    // println!("Pre-proc: {}", target);
-    // The following functions must receive &str with no invalid characters, preserving case, keeping leading period, if there is any
     let mut brand_new_name: String;
     match current_case {
+        Case::Kebab => brand_new_name = target.clone(),
         Case::Snake => brand_new_name = snake_to_kebab(&target),
         Case::Camel => brand_new_name = camel_to_kebab(&target),
         Case::Pascal => brand_new_name = pascal_to_kebab(&target),
         Case::None => brand_new_name = none_to_kebab(&target),
-        _ => {
-            panic!("Damn, I forgot about this one!")
-        }
     };
-    // println!("Post: {}", &brand_new_name);
     if check_case(&brand_new_name) == Case::Kebab {
         if leading_period {
             brand_new_name.insert(0, '.');
         } else if leading_underscore {
             brand_new_name.insert(0, '_');
         }
-        // println!("final: {}", brand_new_name);
+        // println!("Positive for {:?}", &target);
         Some(brand_new_name)
     } else {
+        // println!("Negative for {:?}", &target);
         None
     }
 }
 
 fn snake_to_kebab(target: &str) -> String {
-    eprintln!("We shouldn't be here");
-    target.to_string()
+    let double_allowed = Regex::new(r"\-{2,}").unwrap();
+    let parts: Vec<_> = target.split(".").collect();
+    let mut processed = vec![];
+    for part in parts {
+        let mut pice = part.to_lowercase();
+        pice = pice.trim().to_string();
+        pice = pice.replace(" ", "_");
+        pice = pice.trim_start_matches("_").to_string();
+        pice = pice.trim_end_matches("_").to_string();
+        processed.push(pice);
+    }
+    let mut result = processed.join(".");
+    result = result.trim_end_matches(".").to_string();
+    result = double_allowed.replace_all(&result, "-").to_string();
+    result
 }
 fn camel_to_kebab(target: &str) -> String {
-    eprintln!("We shouldn't be here");
+    // eprintln!("We shouldn't be here");
     target.to_string()
 }
 fn pascal_to_kebab(target: &str) -> String {
-    eprintln!("We shouldn't be here");
+    // eprintln!("We shouldn't be here");
     target.to_string()
 }
 fn none_to_kebab(target: &str) -> String {
     let double_allowed = Regex::new(r"\-{2,}").unwrap();
-    // println!("Kebab-ing");
     let parts: Vec<_> = target.split(".").collect();
     let mut processed = vec![];
     for part in parts {
@@ -108,7 +129,6 @@ fn none_to_kebab(target: &str) -> String {
     let mut result = processed.join(".");
     result = result.trim_end_matches(".").to_string();
     result = double_allowed.replace_all(&result, "-").to_string();
-    // println!("returning: {}", result);
     result
 }
 

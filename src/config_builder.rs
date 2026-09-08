@@ -69,7 +69,7 @@ impl Configs {
             if let Some(x) = new_configs.case {
                 match x.as_str() {
                     "kebab" => defaults.case = Case::Kebab,
-                    // "snake" => defaults.case = Case::Snake,
+                    "snake" => defaults.case = Case::Snake,
                     _ => panic!("Error reading configurations: {x} is not a valid option"),
                 }
             }
