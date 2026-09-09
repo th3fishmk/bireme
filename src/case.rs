@@ -53,6 +53,7 @@ pub fn from_kebab(target: &str, target_case: &Case) -> Option<String> {
 pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
     let invalid = Regex::new(r"[^a-zA-Z0-9\.]").unwrap();
     let double_allowed = Regex::new(r"\-{2,}|\_{2,}|\.{2,}").unwrap();
+    // let double_period = Regex::new(r"\.{2,}").unwrap();
     let spaces = Regex::new(r"\s").unwrap();
     let mut target = diacritics::remove_diacritics(target);
     let leading_period = target.starts_with(".");
@@ -76,12 +77,15 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
         Case::None => brand_new_name = none_to_kebab(&target),
     };
     if check_case(&brand_new_name) == Case::Kebab {
+        println!("before leading: {}", brand_new_name);
         if leading_period {
             brand_new_name.insert(0, '.');
         } else if leading_underscore {
             brand_new_name.insert(0, '_');
         }
+        // brand_new_name = double_period.replace_all(&brand_new_name, ".").to_string();
         // println!("Positive for {:?}", &target);
+        println!("after leading: {}", brand_new_name);
         Some(brand_new_name)
     } else {
         // println!("Negative for {:?}", &target);
@@ -89,23 +93,6 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
     }
 }
 
-fn snake_to_kebab(target: &str) -> String {
-    let double_allowed = Regex::new(r"\-{2,}").unwrap();
-    let parts: Vec<_> = target.split(".").collect();
-    let mut processed = vec![];
-    for part in parts {
-        let mut pice = part.to_lowercase();
-        pice = pice.trim().to_string();
-        pice = pice.replace(" ", "_");
-        pice = pice.trim_start_matches("_").to_string();
-        pice = pice.trim_end_matches("_").to_string();
-        processed.push(pice);
-    }
-    let mut result = processed.join(".");
-    result = result.trim_end_matches(".").to_string();
-    result = double_allowed.replace_all(&result, "-").to_string();
-    result
-}
 fn camel_to_kebab(target: &str) -> String {
     // eprintln!("We shouldn't be here");
     target.to_string()
@@ -124,6 +111,23 @@ fn none_to_kebab(target: &str) -> String {
         pice = pice.replace(" ", "-");
         pice = pice.trim_start_matches("-").to_string();
         pice = pice.trim_end_matches("-").to_string();
+        processed.push(pice);
+    }
+    let mut result = processed.join(".");
+    result = result.trim_end_matches(".").to_string();
+    result = double_allowed.replace_all(&result, "-").to_string();
+    result
+}
+fn snake_to_kebab(target: &str) -> String {
+    let double_allowed = Regex::new(r"\-{2,}").unwrap();
+    let parts: Vec<_> = target.split(".").collect();
+    let mut processed = vec![];
+    for part in parts {
+        let mut pice = part.to_lowercase();
+        pice = pice.trim().to_string();
+        pice = pice.replace(" ", "_");
+        pice = pice.trim_start_matches("_").to_string();
+        pice = pice.trim_end_matches("_").to_string();
         processed.push(pice);
     }
     let mut result = processed.join(".");
@@ -198,13 +202,13 @@ mod tests {
         ];
         names
     }
-    fn _kebab_ed_snake() -> Vec<&'static str> {
+    fn kebab_ed_snake() -> Vec<&'static str> {
         let names = vec![
             // "main.js", // this defaults to kebab
             // ".main.js", // this defaults to kebab
             "app-config.json",
             "user-profile.png",
-            "get-sorted_data.ts",
+            "get-sorted-data.ts",
             "item-123-count.txt",
             "v1-api-routes.go",
             // "_main.js", // this defaults to kebab
@@ -224,7 +228,7 @@ mod tests {
             "_app-config",
             "_user-profile",
             "_get-sorted-data",
-            "_item_123-count",
+            "_item-123-count",
             "_archive-data",
         ];
         names
@@ -334,7 +338,7 @@ mod tests {
         ];
         names
     }
-    fn conventioned_names() -> Vec<&'static str> {
+    fn convention_names() -> Vec<&'static str> {
         let names = vec![
             ".new-folder",
             ".new-folder",
@@ -379,24 +383,64 @@ mod tests {
     }
 
     #[test]
-    fn kebab_ing() {
-        let non_conv = no_convention_names();
-        let mut kebabs = vec![];
-        for snake in &non_conv {
+    fn none_to_kebab() {
+        let nones = no_convention_names();
+        let mut kebabs_from_none = vec![];
+
+        for snake in &nones {
             let kebab = to_kebab(snake, &Case::None).unwrap();
-            kebabs.push(kebab);
+            kebabs_from_none.push(kebab);
         }
-        let conv = conventioned_names();
 
-        let mut index = 0;
-        for keb in &kebabs {
-            println!("\t{}\n{}\n{}", keb == &conv[index], keb, &conv[index]);
-            index = index + 1;
-            println!();
+        for snake in &kebabs_from_none {
+            println!("{snake}");
+            assert!(check_for_kebab_case(snake));
         }
-        assert_eq!(kebabs, conventioned_names());
+
+        let target = convention_names();
+
+        // This is for debugging
+        // let mut index = 0;
+        // for keb in &nones {
+        //     println!("\t{}\n{}\n{}", keb == &target[index], keb, &target[index]);
+        //     index = index + 1;
+        //     println!();
+        // }
+        // End of debugging
+
+        assert_eq!(kebabs_from_none, target);
     }
+    #[test]
+    fn snake_to_kebab() {
+        let nest = snake_names();
+        let mut kebab_nest = vec![];
 
+        for snake in &nest {
+            let snake = to_kebab(snake, &Case::Snake).unwrap();
+            kebab_nest.push(snake);
+        }
+
+        for new_snake in &kebab_nest {
+            assert!(check_for_kebab_case(new_snake));
+        }
+        let target = kebab_ed_snake();
+
+        // This is for debugging
+        // let mut index = 0;
+        // for new_keb in &kebab_nest {
+        //     println!(
+        //         "\t{}\n{}\n{}",
+        //         new_keb == &target[index],
+        //         new_keb,
+        //         &target[index]
+        //     );
+        //     index = index + 1;
+        //     println!();
+        // }
+        // end of debugging
+
+        assert_eq!(kebab_nest, target);
+    }
     #[test]
     fn all_kebab() {
         let examples = kebab_names();
@@ -489,7 +533,6 @@ mod tests {
         }
         assert!(pascals.is_empty())
     }
-
     #[test]
     fn check_casing() {
         let kebabs = kebab_names();

@@ -157,6 +157,7 @@ mod tests {
     }
     // This function is marked as a test but it's actual purpose is to create dummy files/dirs to work with
     #[test]
+    #[ignore = "not an actual test"]
     fn create_temporal_files_and_dirs() {
         let path = PathBuf::from("dummy");
         let dummy_dirs = getter_dirnames();
