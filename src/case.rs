@@ -41,7 +41,8 @@ pub fn from_kebab(target: &str, target_case: &Case) -> Option<String> {
         }
         Case::Snake => {
             // println!("Snaking!");
-            Some("snaky_file".to_string())
+            // Some("snaky_file".to_string())
+            None
         }
         _ => {
             println!("Negative for _");
@@ -77,7 +78,6 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
         Case::None => brand_new_name = none_to_kebab(&target),
     };
     if check_case(&brand_new_name) == Case::Kebab {
-        println!("before leading: {}", brand_new_name);
         if leading_period {
             brand_new_name.insert(0, '.');
         } else if leading_underscore {
@@ -85,7 +85,6 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
         }
         // brand_new_name = double_period.replace_all(&brand_new_name, ".").to_string();
         // println!("Positive for {:?}", &target);
-        println!("after leading: {}", brand_new_name);
         Some(brand_new_name)
     } else {
         // println!("Negative for {:?}", &target);

@@ -93,6 +93,11 @@ fn parse_dir(target_dir: &Path, configs: &Configs) {
         } else {
             println!("No changes where made!");
         }
+    } else if count > 0 && with_name == 0 {
+        println!(
+            "We're sorry, {} items were mark to rename, but we couldn't get you names for them",
+            count
+        )
     } else {
         println!("Nothing to do here");
     }
@@ -108,7 +113,7 @@ fn read_directory(path: &Path) -> Vec<DirEntry> {
 }
 
 fn ask_confirmation(count: usize) -> bool {
-    print!("Automatic rename is possible for {count} files/directories. Rename? y/[n]: ");
+    print!("Rename {count} items? y/[n]: ");
     let _ = io::stdout().flush();
     let mut user_confirmation = String::new();
     io::stdin()
