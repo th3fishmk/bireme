@@ -1,6 +1,6 @@
 use crate::{
     Case::{self},
-    case::{check_case, from_kebab, to_kebab},
+    case::{check_case, kebab_to_others, to_kebab},
     config_builder::Configs,
 };
 use colored::{ColoredString, Colorize};
@@ -38,7 +38,7 @@ impl<'a> CustomDirEntry<'a> {
         let kebab_name = to_kebab(&name, &current_case);
         let new_cased_name: Option<String>;
         match kebab_name {
-            Some(x) => new_cased_name = from_kebab(&x, &configs.case),
+            Some(x) => new_cased_name = kebab_to_others(&x, &configs.case),
             None => new_cased_name = None,
         };
         CustomDirEntry {

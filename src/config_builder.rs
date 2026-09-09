@@ -70,6 +70,7 @@ impl Configs {
                 match x.as_str() {
                     "kebab" => defaults.case = Case::Kebab,
                     "snake" => defaults.case = Case::Snake,
+                    "camel" => defaults.case = Case::Camel,
                     _ => panic!("Error reading configurations: {x} is not a valid option"),
                 }
             }

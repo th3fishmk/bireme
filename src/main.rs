@@ -138,25 +138,25 @@ mod tests {
     use std::{fs::File, path::PathBuf};
     fn getter_dirnames() -> Vec<&'static str> {
         let dummy_dirs = vec![
-            "dummy-dir",
-            "dummy_dir",
-            "dummy_ directory",
-            "dummy dir",
+            "kebab-dir",
+            "snaky_dir",
+            "PascalDir",
+            "camelDir",
             "dummYd🥶ir",
-            "dummdir",
         ];
         dummy_dirs
     }
     fn getter_filenames() -> Vec<&'static str> {
         let dummy_files = vec![
-            "dummy-file.txt",
-            "dummyfile..c",
-            "dummyFile.jpg",
-            "dummy_file.bak",
-            "dummy. file",
-            "dummyfile01.file.",
-            "Dummy-file.mp3",
-            "DummyFile.exe",
+            "kebab-file.rs",
+            "double-kebab-file.rs",
+            "snaky_dir.rs",
+            "double_snaky_dir.rs",
+            "PascalDir.rs",
+            "DoublePascalDir.rs",
+            "camelDir.rs",
+            "doubleCamelDir.rs",
+            "dummYd🥶ir.rs",
         ];
         dummy_files
     }
