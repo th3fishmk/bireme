@@ -54,11 +54,9 @@ fn parse_dir(target_dir: &Path, configs: &Configs) {
 
     if !reads.is_empty() {
         for dir in &directories {
-            print!("+ ");
             dir.pretty_print();
         }
         for file in &files {
-            print!("- ");
             file.pretty_print();
         }
     }

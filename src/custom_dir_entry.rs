@@ -24,6 +24,7 @@ pub struct CustomDirEntry<'a> {
 impl<'a> CustomDirEntry<'a> {
     pub fn new(entry: &'a DirEntry, configs: &Configs) -> CustomDirEntry<'a> {
         let name = entry.file_name().into_string().unwrap();
+        // print!("Working on: {}\r", name);
         let current_case = check_case(&name);
         let dotfile = name.starts_with(".");
         let check_dotfile = if dotfile {
@@ -34,7 +35,6 @@ impl<'a> CustomDirEntry<'a> {
 
         let case_change_req = current_case != configs.case;
         let all_true = case_change_req && check_dotfile;
-
         let kebab_name = to_kebab(&name, &current_case);
         let new_cased_name: Option<String>;
         match kebab_name {
@@ -56,7 +56,7 @@ impl<'a> CustomDirEntry<'a> {
     pub fn rename(&self) {
         if self.marked_to_rename {
             match &self.new_name {
-                None => println!("New name could NOT be constructed automatically"),
+                None => (),
                 Some(new_name) => {
                     let old_full_name = self.item_data.path().into_string().unwrap();
                     let old_name = &self.name;
@@ -106,7 +106,7 @@ impl<'a> CustomDirEntry<'a> {
         let mut name: ColoredString = self.name.red();
         match self.current_case {
             Case::Kebab => name = name.green(),
-            Case::Snake => name = name.yellow(),
+            Case::Snake => name = name.blue(),
             Case::Camel => name = name.cyan(),
             Case::Pascal => name = name.yellow(),
             Case::None => name = name.red(),
@@ -115,22 +115,27 @@ impl<'a> CustomDirEntry<'a> {
             let new_full_name = &self.new_name;
             match new_full_name {
                 None => {
-                    println!("We couldn't get you a name for: {name}")
+                    println!(
+                        "We couldn't get you a {:?} name for: {}",
+                        self.target_case, name
+                    )
                 }
                 Some(new_name) => {
                     let mut new_name = new_name.red();
                     match self.target_case {
                         Case::Kebab => new_name = new_name.green(),
-                        Case::Snake => new_name = new_name.yellow(),
+                        Case::Snake => new_name = new_name.blue(),
                         Case::Camel => new_name = new_name.cyan(),
                         Case::Pascal => new_name = new_name.yellow(),
                         Case::None => new_name = new_name.red(),
                     };
-                    println!("{name} => {new_name}");
+                    let marker = if self.is_dir { "+" } else { "-" };
+                    println!("{marker} {name} => {new_name}");
                 }
             }
-        } else {
-            println!("{name}");
         }
+        // else {
+        //     println!("{name}");
+        // }
     }
 }

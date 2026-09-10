@@ -3,7 +3,7 @@
 # Target naming convention
 # Allowed values: "kebab", "snake", "camel" and "pascal"
 # Default: "kebab"
-case = "kebab"
+case = "camel"
 
 # Ignore files started with '.'
 # Default: true
