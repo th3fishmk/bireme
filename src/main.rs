@@ -1,12 +1,14 @@
+use crate::{config_builder::Configs, custom_dir_entry::CustomDirEntry};
+use colored::Colorize;
+use serde::Deserialize;
 use std::{
     env::args,
     fs::{self, DirEntry},
     io::{self, Write},
     path::Path,
 };
-
-use crate::custom_dir_entry::CustomDirEntry;
 mod case;
+mod config_builder;
 mod custom_dir_entry;
 
 fn main() {
@@ -17,23 +19,38 @@ fn main() {
     if arguments.len() > 1 {
         target_dir = Path::new(&arguments[1]);
     }
+    let configs = Configs::search_configs(target_dir);
 
-    parse_dir(target_dir);
+    println!("{:?}", configs);
+    println!();
+
+    parse_dir(target_dir, &configs);
 }
 
-fn parse_dir(target_dir: &Path) {
+fn parse_dir(target_dir: &Path, configs: &Configs) {
     let reads = read_directory(target_dir);
-    let items_in_dir: Vec<CustomDirEntry> = reads.iter().map(CustomDirEntry::new).collect();
+    let items_in_dir: Vec<CustomDirEntry> = reads
+        .iter()
+        .map(|f| CustomDirEntry::new(f, configs))
+        .collect();
     let directories: Vec<_> = items_in_dir.iter().filter(|f| f.is_dir).collect();
     let files: Vec<_> = items_in_dir.iter().filter(|f| !f.is_dir).collect();
 
-    if !directories.is_empty() {
+    if !directories.is_empty() && configs.recursive_mode {
         for item in &directories {
-            parse_dir(&item.item.path());
+            if !(configs.ignore_dotfiles && item.is_dotfile) {
+                parse_dir(&item.item_data.path(), configs);
+            } else {
+                let message = format!("Skipping {} (dotfile)", item.name).green();
+                println!("{message}");
+            }
         }
     }
 
-    println!("\nWorking on the following dir: {:?}", target_dir);
+    println!(
+        "\nWorking on the following dir: {}",
+        target_dir.to_str().unwrap()
+    );
 
     if !reads.is_empty() {
         for dir in &directories {
@@ -44,15 +61,24 @@ fn parse_dir(target_dir: &Path) {
         }
     }
 
-    let count_to_rename: usize = items_in_dir
+    let count_to_rename = items_in_dir
         .iter()
-        .filter(|f| f.case != Case::Kebab)
-        .collect::<Vec<_>>()
-        .len();
+        .filter(|f| f.marked_to_rename)
+        .collect::<Vec<_>>();
+    let count = count_to_rename.len();
+    let with_name = count_to_rename
+        .iter()
+        .filter(|f| f.new_name.is_some())
+        .count();
 
-    if count_to_rename > 0 {
+    if with_name > 0 {
         println!("\n{} items on: {:?}", items_in_dir.len(), target_dir);
-        let confirmation = ask_confirmation(count_to_rename);
+        if count != with_name {
+            println!(
+                "{count} items where mark to rename, but we can only provide names for {with_name}"
+            );
+        }
+        let confirmation = ask_confirmation(with_name);
         if confirmation {
             // Renaming dirs
             for dir in &directories {
@@ -65,6 +91,11 @@ fn parse_dir(target_dir: &Path) {
         } else {
             println!("No changes where made!");
         }
+    } else if count > 0 && with_name == 0 {
+        println!(
+            "We're sorry, {} items were mark to rename, but we couldn't get you names for them",
+            count
+        )
     } else {
         println!("Nothing to do here");
     }
@@ -74,13 +105,13 @@ fn read_directory(path: &Path) -> Vec<DirEntry> {
     if path.parent().is_none() {
         panic!("Working on the root dir is not allowed!");
     }
-    let message = format!("Failed to read the directory: {:?}", path);
+    let message = format!("Failed to read the directory: {}", path.to_str().unwrap());
     let read = fs::read_dir(path).expect(&message);
     read.into_iter().map(|f| f.unwrap()).collect()
 }
 
 fn ask_confirmation(count: usize) -> bool {
-    print!("Automatic rename is possible for {count} files/directories. Rename? y/[n]: ");
+    print!("Rename {count} items? y/[n]: ");
     let _ = io::stdout().flush();
     let mut user_confirmation = String::new();
     io::stdin()
@@ -90,7 +121,7 @@ fn ask_confirmation(count: usize) -> bool {
     user_confirmation == "y" || user_confirmation == "yes"
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum Case {
     Kebab,
     Snake,
@@ -105,30 +136,31 @@ mod tests {
     use std::{fs::File, path::PathBuf};
     fn getter_dirnames() -> Vec<&'static str> {
         let dummy_dirs = vec![
-            "dummy-dir",
-            "dummy_dir",
-            "dummy_ directory",
-            "dummy dir",
+            "kebab-dir",
+            "snaky_dir",
+            "PascalDir",
+            "camelDir",
             "dummYd🥶ir",
-            "dummdir",
         ];
         dummy_dirs
     }
     fn getter_filenames() -> Vec<&'static str> {
         let dummy_files = vec![
-            "dummy-file.txt",
-            "dummyfile..c",
-            "dummyFile.jpg",
-            "dummy_file.bak",
-            "dummy. file",
-            "dummyfile01.file.",
-            "Dummy-file.mp3",
-            "DummyFile.exe",
+            "kebab-file.rs",
+            "double-kebab-file.rs",
+            "snaky_dir.rs",
+            "double_snaky_dir.rs",
+            "PascalDir.rs",
+            "DoublePascalDir.rs",
+            "camelDir.rs",
+            "doubleCamelDir.rs",
+            "dummYd🥶ir.rs",
         ];
         dummy_files
     }
     // This function is marked as a test but it's actual purpose is to create dummy files/dirs to work with
     #[test]
+    #[ignore = "not an actual test"]
     fn create_temporal_files_and_dirs() {
         let path = PathBuf::from("dummy");
         let dummy_dirs = getter_dirnames();
