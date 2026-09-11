@@ -1,8 +1,42 @@
-use crate::Case::{self};
+use crate::Case;
 use diacritics;
 use regex::Regex;
 
 pub fn check_case(target: &str, _preferred: Case) -> Case {
+    match _preferred {
+        Case::Kebab => {
+            if check_for_kebab_case(target) {
+                Case::Kebab
+            } else {
+                check_for_random_case(target)
+            }
+        }
+        Case::Snake => {
+            if check_for_snake_case(target) {
+                Case::Snake
+            } else {
+                check_for_random_case(target)
+            }
+        }
+        Case::Camel => {
+            if check_for_camel_case(target) {
+                Case::Camel
+            } else {
+                check_for_random_case(target)
+            }
+        }
+        Case::Pascal => {
+            if check_for_camel_case(target) {
+                Case::Pascal
+            } else {
+                check_for_random_case(target)
+            }
+        }
+        Case::None => Case::None,
+    }
+}
+
+fn check_for_random_case(target: &str) -> Case {
     if check_for_kebab_case(target) {
         Case::Kebab
     } else if check_for_snake_case(target) {
