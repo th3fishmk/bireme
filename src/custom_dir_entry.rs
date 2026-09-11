@@ -25,7 +25,7 @@ impl<'a> CustomDirEntry<'a> {
     pub fn new(entry: &'a DirEntry, configs: &Configs) -> CustomDirEntry<'a> {
         let name = entry.file_name().into_string().unwrap();
         // print!("Working on: {}\r", name);
-        let current_case = check_case(&name);
+        let current_case = check_case(&name, configs.case.clone());
         let dotfile = name.starts_with(".");
         let check_dotfile = if dotfile {
             !configs.ignore_dotfiles

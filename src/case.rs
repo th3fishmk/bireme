@@ -2,7 +2,7 @@ use crate::Case::{self};
 use diacritics;
 use regex::Regex;
 
-pub fn check_case(target: &str) -> Case {
+pub fn check_case(target: &str, _preferred: Case) -> Case {
     if check_for_kebab_case(target) {
         Case::Kebab
     } else if check_for_snake_case(target) {
@@ -34,12 +34,100 @@ fn check_for_pascal_case(target: &str) -> bool {
 }
 
 pub fn kebab_to_others(target: &str, target_case: &Case) -> Option<String> {
+    let mut target = target.to_string();
+    let leading_period = target.starts_with(".");
+    let leading_underscore = target.starts_with("_");
+
+    if leading_period {
+        target = target.trim_start_matches(".").to_string();
+    }
+    if leading_underscore {
+        target = target.trim_start_matches("_").to_string();
+    }
+
+    let mut brand_new_name: String;
     match target_case {
-        Case::Kebab => Some(target.to_string()),
-        _ => {
-            // print!("Negative for _\r");
-            None
+        Case::Kebab => brand_new_name = target.to_string(),
+        Case::Snake => brand_new_name = kebab_to_snake(&target),
+        Case::Camel => brand_new_name = kebab_to_camel(&target),
+        Case::Pascal => brand_new_name = kebab_to_pascal(&target),
+        Case::None => brand_new_name = String::new(),
+    }
+    if brand_new_name.is_empty() {
+        None
+    } else if check_case(&brand_new_name, target_case.clone()) == *target_case {
+        if leading_period {
+            brand_new_name.insert(0, '.');
+        } else if leading_underscore {
+            brand_new_name.insert(0, '_');
         }
+        Some(brand_new_name)
+    } else {
+        None
+    }
+}
+
+fn kebab_to_snake(target: &str) -> String {
+    let mut processed = vec![];
+    let parts: Vec<_> = target.split(".").collect();
+    for part in parts {
+        let mut pice = part.trim().to_string();
+        pice = pice.replace("-", "_");
+        processed.push(pice);
+    }
+    let result = processed.join(".");
+    result
+}
+fn kebab_to_camel(target: &str) -> String {
+    let mut processed = vec![];
+    let parts: Vec<_> = target.split(".").collect();
+    let part_count = parts.len();
+    let mut part_index = 0;
+    for part in parts {
+        let chunk: Vec<_> = part.split("-").collect();
+        let mut semi_final = vec![];
+        let mut index = 0;
+        for split in chunk {
+            if index > 0 && part_count != part_index {
+                semi_final.push(capitalize_first_letter(split));
+            } else {
+                semi_final.push(split.to_string());
+            }
+            index = index + 1;
+        }
+        processed.push(semi_final.join(""));
+        part_index = part_index + 1;
+    }
+    let result = processed.join(".");
+    println!("{result}");
+    result
+}
+fn kebab_to_pascal(target: &str) -> String {
+    let mut processed = vec![];
+    let parts: Vec<_> = target.split(".").collect();
+    let mut part_index = 0;
+    for part in parts {
+        let chunk: Vec<_> = part.split("-").collect();
+        let mut semi_final = vec![];
+        for i in chunk {
+            if part_index == 0 {
+                semi_final.push(capitalize_first_letter(i));
+            } else {
+                semi_final.push(i.to_string());
+            }
+        }
+        processed.push(semi_final.join(""));
+        part_index = part_index + 1;
+    }
+    let result = processed.join(".");
+    println!("{result}");
+    result
+}
+fn capitalize_first_letter(word: &str) -> String {
+    let mut chars = word.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(f) => f.to_uppercase().to_string() + chars.as_str(),
     }
 }
 
@@ -65,7 +153,7 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
     };
     if brand_new_name.is_empty() {
         None
-    } else if check_case(&brand_new_name) == Case::Kebab {
+    } else if check_case(&brand_new_name, current_case.clone()) == Case::Kebab {
         if leading_period {
             brand_new_name.insert(0, '.');
         } else if leading_underscore {
@@ -76,7 +164,6 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
         None
     }
 }
-
 fn none_to_kebab(target: &str) -> String {
     let invalid = Regex::new(r"[^a-zA-Z0-9\.]").unwrap();
     let double_allowed = Regex::new(r"\-{2,}|\_{2,}|\.{2,}").unwrap();
@@ -150,28 +237,14 @@ fn pascal_to_kebab(target: &str) -> String {
     let result = processed.join(".");
     result
 }
-// From kebab to other cases
-// fn kebab_to_snake(target: &str) -> String {
-//     let parts: Vec<_> = target.split(".").collect();
-
-//     let mut processed = vec![];
-//     for part in parts {
-//         // let mut pice = part.to_lowercase();
-//         let mut pice = part.trim().to_string();
-//         pice = pice.replace("_", "-");
-//         // pice = pice.trim_start_matches("_").to_string();
-//         // pice = pice.trim_end_matches("_").to_string();
-//         processed.push(pice);
-//     }
-//     let mut result = processed.join(".");
-//     result = result.trim_end_matches(".").to_string();
-//     // result = double_allowed.replace_all(&result, "-").to_string();
-//     result
-// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn uppercase_first_char() {
+        assert_eq!("Hello", capitalize_first_letter("hello"))
+    }
 
     fn kebab_names() -> Vec<&'static str> {
         let names = vec![
@@ -478,6 +551,38 @@ mod tests {
     }
 
     #[test]
+    fn keb_to_snake() {
+        let kebs = snake_names_as_kebab();
+        let mut nest_of_kebs = vec![];
+        for keb in kebs {
+            let new_snake = kebab_to_others(keb, &Case::Snake).unwrap();
+            nest_of_kebs.push(new_snake);
+        }
+
+        assert_eq!(nest_of_kebs, snake_names());
+    }
+    #[test]
+    fn keb_to_camel() {
+        let kebs = camel_names_as_kebab();
+        let mut flock_of_kebab = vec![];
+        for keb in kebs {
+            let new_keb = kebab_to_others(keb, &Case::Camel).unwrap();
+            flock_of_kebab.push(new_keb);
+        }
+        assert_eq!(flock_of_kebab, camel_names())
+    }
+    #[test]
+    fn keb_to_pascals() {
+        let kebs = pascal_names_as_kebad();
+        let mut pascals = vec![];
+        for keb in kebs {
+            let new_keb = kebab_to_others(keb, &Case::Pascal).unwrap();
+            pascals.push(new_keb);
+        }
+        assert_eq!(pascals, pascal_names())
+    }
+
+    #[test]
     fn test_none_to_kebab() {
         let nones = no_convention_names();
         let mut kebabs_from_none = vec![];
@@ -631,21 +736,21 @@ mod tests {
     fn check_casing() {
         let kebabs = kebab_names();
         for name in kebabs {
-            assert_eq!(Case::Kebab, check_case(&name));
+            assert_eq!(Case::Kebab, check_case(&name, Case::Kebab));
         }
         let snakes = snake_names();
         for snake in snakes {
-            assert_eq!(Case::Snake, check_case(&snake))
-        }
-
-        let pascals = pascal_names();
-        for pascal in pascals {
-            assert_eq!(Case::Pascal, check_case(pascal))
+            assert_eq!(Case::Snake, check_case(&snake, Case::Snake))
         }
 
         let camels = camel_names();
         for camel in camels {
-            assert_eq!(Case::Camel, check_case(camel))
+            assert_eq!(Case::Camel, check_case(camel, Case::Camel))
+        }
+
+        let pascals = pascal_names();
+        for pascal in pascals {
+            assert_eq!(Case::Pascal, check_case(pascal, Case::Pascal))
         }
     }
 }
