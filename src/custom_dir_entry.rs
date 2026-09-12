@@ -24,7 +24,6 @@ pub struct CustomDirEntry<'a> {
 impl<'a> CustomDirEntry<'a> {
     pub fn new(entry: &'a DirEntry, configs: &Configs) -> CustomDirEntry<'a> {
         let name = entry.file_name().into_string().unwrap();
-        // print!("Working on: {}\r", name);
         let current_case = check_case(&name, configs.case.clone());
         let dotfile = name.starts_with(".");
         let check_dotfile = if dotfile {
@@ -32,24 +31,28 @@ impl<'a> CustomDirEntry<'a> {
         } else {
             true
         };
-
         let case_change_req = current_case != configs.case;
         let all_true = case_change_req && check_dotfile;
+
         let kebab_name = to_kebab(&name, &current_case);
-        let new_cased_name: Option<String>;
+        let name_updated: Option<String>;
         match kebab_name {
-            Some(x) => new_cased_name = kebab_to_others(&x, &configs.case),
-            None => new_cased_name = None,
+            Some(x) => name_updated = kebab_to_others(&x, &configs.case),
+            None => name_updated = None,
         };
+        println!(
+            "\t{name}: all true: {all_true}, case_change: {case_change_req}, dotfile: {check_dotfile}"
+        );
+        println!("\t{:?} => {:?}", &current_case, configs.case);
         CustomDirEntry {
             item_data: entry,
             name: name.clone(),
+            new_name: name_updated,
             current_case: current_case,
             target_case: configs.case.clone(),
             is_dir: entry.file_type().unwrap().is_dir(),
             is_dotfile: dotfile,
             marked_to_rename: all_true,
-            new_name: new_cased_name,
         }
     }
 

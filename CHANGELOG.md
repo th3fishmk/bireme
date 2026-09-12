@@ -23,9 +23,10 @@ All notable changes in this projects will be listed in this document
 
 Adding settings:
 
-- [ ] casing
+- [x] casing
 - [x] ignore dotfiles
 - [ ] ignore gitignore
+  - [ ] To ignore gitignore, we first need to _not ignore_ the gitignore file
 - [x] recursive mode
 - [ ] ignore patters
 - [ ] max length

@@ -32,10 +32,10 @@ pub fn check_case(target: &str, _preferred: Case) -> Case {
                 check_for_random_case(target)
             }
         }
-        Case::None => Case::None,
+        _ => check_for_random_case(target),
+        // Case::None => Case::None,
     }
 }
-
 fn check_for_random_case(target: &str) -> Case {
     if check_for_kebab_case(target) {
         Case::Kebab
@@ -185,16 +185,20 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
         Case::Camel => brand_new_name = camel_to_kebab(&target),
         Case::Pascal => brand_new_name = pascal_to_kebab(&target),
     };
+    println!("New name: {brand_new_name}");
     if brand_new_name.is_empty() {
+        println!("Error: Empty!");
         None
-    } else if check_case(&brand_new_name, current_case.clone()) == Case::Kebab {
+    } else if check_case(&brand_new_name, Case::Kebab) == Case::Kebab {
         if leading_period {
             brand_new_name.insert(0, '.');
         } else if leading_underscore {
             brand_new_name.insert(0, '_');
         }
+        println!("Is kebab: {brand_new_name}");
         Some(brand_new_name)
     } else {
+        println!("Error: is not kebab: {brand_new_name}");
         None
     }
 }
@@ -275,6 +279,24 @@ fn pascal_to_kebab(target: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn convert() {
+        let name = [
+            ("kebab-name", Case::Kebab),
+            ("snake_name", Case::Snake),
+            ("camelName", Case::Camel),
+            ("PascalName", Case::Pascal),
+            ("no convention Name", Case::None),
+        ];
+        let converted = name.map(|(f, g)| to_kebab(f, &g));
+
+        for conv in converted {
+            let conv = conv.unwrap();
+            assert!(check_for_kebab_case(&conv));
+        }
+    }
+
     #[test]
     fn uppercase_first_char() {
         assert_eq!("Hello", capitalize_first_letter("hello"))
@@ -621,6 +643,7 @@ mod tests {
         let nones = no_convention_names();
         let mut kebabs_from_none = vec![];
         for snake in &nones {
+            println!("{}", snake);
             let kebab = to_kebab(snake, &Case::None).unwrap();
             kebabs_from_none.push(kebab);
         }
@@ -628,7 +651,6 @@ mod tests {
             println!("{snake}");
             assert!(check_for_kebab_case(snake));
         }
-
         let target = convention_names();
         assert_eq!(kebabs_from_none, target);
     }
