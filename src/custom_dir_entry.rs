@@ -24,7 +24,7 @@ pub struct CustomDirEntry<'a> {
 }
 
 impl<'a> CustomDirEntry<'a> {
-    pub fn new(entry: &'a DirEntry, configs: &Configs, ignore: &GlobSet) -> CustomDirEntry<'a> {
+    pub fn new(entry: &'a DirEntry, configs: &Configs, _ignore: &GlobSet) -> CustomDirEntry<'a> {
         let name = entry.file_name().into_string().unwrap();
         let current_case = check_case(&name, configs.case.clone());
         let dotfile = name.starts_with(".");
@@ -33,10 +33,10 @@ impl<'a> CustomDirEntry<'a> {
         } else {
             true
         };
-        let ignored = ignore.is_match(&name);
-        println!("Ignoring {:?}: {ignored}", entry.path());
+        let is_dir = entry.file_type().unwrap().is_dir();
+
         let case_change_req = current_case != configs.case;
-        let all_true = case_change_req && check_dotfile && !ignored;
+        let all_true = case_change_req && check_dotfile;
 
         let kebab_name = to_kebab(&name, &current_case);
         let name_updated: Option<String>;
@@ -54,7 +54,7 @@ impl<'a> CustomDirEntry<'a> {
             new_name: name_updated,
             current_case: current_case,
             target_case: configs.case.clone(),
-            is_dir: entry.file_type().unwrap().is_dir(),
+            is_dir: is_dir,
             is_dotfile: dotfile,
             marked_to_rename: all_true,
         }

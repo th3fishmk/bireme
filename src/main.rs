@@ -41,8 +41,13 @@ fn parse_dir(target_dir: &Path, configs: &Configs, ignore: &GlobSet) {
 
     if !directories.is_empty() && configs.recursive_mode {
         for item in &directories {
+            let matching = ignore.is_match(&item.name);
             if !(configs.ignore_dotfiles && item.is_dotfile) {
-                parse_dir(&item.item_data.path(), configs, ignore);
+                if matching {
+                    println!("{} => ignored by ignore pattern", &item.name);
+                } else {
+                    parse_dir(&item.item_data.path(), configs, ignore);
+                }
             } else {
                 let message = format!("Skipping {} (dotfile)", item.name).green();
                 println!("{message}");
