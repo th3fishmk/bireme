@@ -2,8 +2,10 @@ use crate::{
     Case::{self},
     case::{check_case, kebab_to_others, to_kebab},
     config_builder::Configs,
+    ignore,
 };
 use colored::{ColoredString, Colorize};
+use globset::GlobSet;
 use std::{
     fs::{self, DirEntry},
     path::Path,
@@ -22,7 +24,7 @@ pub struct CustomDirEntry<'a> {
 }
 
 impl<'a> CustomDirEntry<'a> {
-    pub fn new(entry: &'a DirEntry, configs: &Configs) -> CustomDirEntry<'a> {
+    pub fn new(entry: &'a DirEntry, configs: &Configs, ignore: &GlobSet) -> CustomDirEntry<'a> {
         let name = entry.file_name().into_string().unwrap();
         let current_case = check_case(&name, configs.case.clone());
         let dotfile = name.starts_with(".");
@@ -31,8 +33,10 @@ impl<'a> CustomDirEntry<'a> {
         } else {
             true
         };
+        let ignored = ignore.is_match(&name);
+        println!("Ignoring {:?}: {ignored}", entry.path());
         let case_change_req = current_case != configs.case;
-        let all_true = case_change_req && check_dotfile;
+        let all_true = case_change_req && check_dotfile && !ignored;
 
         let kebab_name = to_kebab(&name, &current_case);
         let name_updated: Option<String>;
@@ -40,10 +44,10 @@ impl<'a> CustomDirEntry<'a> {
             Some(x) => name_updated = kebab_to_others(&x, &configs.case),
             None => name_updated = None,
         };
-        println!(
-            "\t{name}: all true: {all_true}, case_change: {case_change_req}, dotfile: {check_dotfile}"
-        );
-        println!("\t{:?} => {:?}", &current_case, configs.case);
+        // println!(
+        //     "\t{name}: all true: {all_true}, case_change: {case_change_req}, dotfile: {check_dotfile}"
+        // );
+        // println!("\t{:?} => {:?}", &current_case, configs.case);
         CustomDirEntry {
             item_data: entry,
             name: name.clone(),

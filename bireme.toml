@@ -7,7 +7,7 @@ case = "snake"
 
 # Ignore files started with '.'
 # Default: true
-ignore_dotfiles = false
+ignore_dotfiles = true
 
 # Ignore gitignore file
 # Disable scanning the `.gitignore` (if any) file and applying the same rules

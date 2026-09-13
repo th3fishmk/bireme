@@ -62,7 +62,7 @@ impl Configs {
         let mut defaults = Self::get_defaults();
 
         if exist {
-            println!("Using custom configs!");
+            // println!("Using custom configs!");
             let content = fs::read_to_string(full_path).unwrap();
             let new_configs: OptionalConfigs = toml::from_str(&content).unwrap();
 

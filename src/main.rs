@@ -1,5 +1,6 @@
-use crate::{config_builder::Configs, custom_dir_entry::CustomDirEntry};
+use crate::{config_builder::Configs, custom_dir_entry::CustomDirEntry, ignore::read_gitignore};
 use colored::Colorize;
+use globset::GlobSet;
 use serde::Deserialize;
 use std::{
     env::args,
@@ -10,6 +11,7 @@ use std::{
 mod case;
 mod config_builder;
 mod custom_dir_entry;
+mod ignore;
 
 fn main() {
     let arguments: Vec<_> = args().collect();
@@ -20,18 +22,19 @@ fn main() {
         target_dir = Path::new(&arguments[1]);
     }
     let configs = Configs::search_configs(target_dir);
+    let ignore_pattern = read_gitignore(target_dir);
 
     println!("{:?}", configs);
     println!();
 
-    parse_dir(target_dir, &configs);
+    parse_dir(target_dir, &configs, &ignore_pattern);
 }
 
-fn parse_dir(target_dir: &Path, configs: &Configs) {
+fn parse_dir(target_dir: &Path, configs: &Configs, ignore: &GlobSet) {
     let reads = read_directory(target_dir);
     let items_in_dir: Vec<CustomDirEntry> = reads
         .iter()
-        .map(|f| CustomDirEntry::new(f, configs))
+        .map(|f| CustomDirEntry::new(f, configs, ignore))
         .collect();
     let directories: Vec<_> = items_in_dir.iter().filter(|f| f.is_dir).collect();
     let files: Vec<_> = items_in_dir.iter().filter(|f| !f.is_dir).collect();
@@ -39,7 +42,7 @@ fn parse_dir(target_dir: &Path, configs: &Configs) {
     if !directories.is_empty() && configs.recursive_mode {
         for item in &directories {
             if !(configs.ignore_dotfiles && item.is_dotfile) {
-                parse_dir(&item.item_data.path(), configs);
+                parse_dir(&item.item_data.path(), configs, ignore);
             } else {
                 let message = format!("Skipping {} (dotfile)", item.name).green();
                 println!("{message}");
