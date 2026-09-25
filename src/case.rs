@@ -133,7 +133,7 @@ fn kebab_to_camel(target: &str) -> String {
         part_index = part_index + 1;
     }
     let result = processed.join(".");
-    println!("{result}");
+    // println!("{result}");
     result
 }
 fn kebab_to_pascal(target: &str) -> String {
@@ -154,7 +154,7 @@ fn kebab_to_pascal(target: &str) -> String {
         part_index = part_index + 1;
     }
     let result = processed.join(".");
-    println!("{result}");
+    // println!("{result}");
     result
 }
 fn capitalize_first_letter(word: &str) -> String {
@@ -185,9 +185,9 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
         Case::Camel => brand_new_name = camel_to_kebab(&target),
         Case::Pascal => brand_new_name = pascal_to_kebab(&target),
     };
-    println!("New name: {brand_new_name}");
+    // println!("New name: {brand_new_name}");
     if brand_new_name.is_empty() {
-        println!("Error: Empty!");
+        // println!("Error: Empty!");
         None
     } else if check_case(&brand_new_name, Case::Kebab) == Case::Kebab {
         if leading_period {
@@ -195,10 +195,10 @@ pub fn to_kebab(target: &str, current_case: &Case) -> Option<String> {
         } else if leading_underscore {
             brand_new_name.insert(0, '_');
         }
-        println!("Is kebab: {brand_new_name}");
+        // println!("Is kebab: {brand_new_name}");
         Some(brand_new_name)
     } else {
-        println!("Error: is not kebab: {brand_new_name}");
+        // println!("Error: is not kebab: {brand_new_name}");
         None
     }
 }

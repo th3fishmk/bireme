@@ -40,10 +40,10 @@ impl<'a> CustomDirEntry<'a> {
             Some(x) => name_updated = kebab_to_others(&x, &configs.case),
             None => name_updated = None,
         };
-        println!(
-            "\t{name}: all true: {all_true}, case_change: {case_change_req}, dotfile: {check_dotfile}"
-        );
-        println!("\t{:?} => {:?}", &current_case, configs.case);
+        // println!(
+        //     "\t{name}: all true: {all_true}, case_change: {case_change_req}, dotfile: {check_dotfile}"
+        // );
+        // println!("\t{:?} => {:?}", &current_case, configs.case);
         CustomDirEntry {
             item_data: entry,
             name: name.clone(),
